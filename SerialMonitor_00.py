@@ -15,19 +15,22 @@ ser.rtscts = False
 ser.dsrdtr = False
 ser.timeout = 1 #Specifies a read timeout in sec
 
-def receiving(ser):
-    global last_received
+#Returns last full line from Serial buffer
+def receiving(s):
+    last_received = b''
     buffer_string = b''
     while True:
-        buffer_string = buffer_string + ser.read(ser.inWaiting())
-        if '\n' in buffer_string:
-            lines = buffer_string.split('\n')
+        buffer_string = buffer_string + s.read(s.inWaiting())
+        if b'\n' in buffer_string:
+            lines = buffer_string.split(b'\n')
             last_received = lines[-2]
             buffer_string = lines[-1]
-    return last_received
-
+            if len(lines) >= 3:
+                return last_received
+            
+#Decode last full line from serial buffer and write to file
 ser_bytes = receiving(ser)
-decoded_bytes = str(ser_bytes[0:len(ser_bytes)-2].decode("utf-8"))
+decoded_bytes = str(ser_bytes[0:len(ser_bytes)].decode("utf-8"))
 print(decoded_bytes)
 with open('/home/atsmithpb/Desktop/currentCLK.csv', "w") as f:
     f.write(decoded_bytes)
