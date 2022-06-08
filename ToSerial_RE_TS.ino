@@ -1,3 +1,9 @@
+//Semantics:
+//Temperature Sensor == TS
+//Rotary Encoder == RE
+//Rotary Encoder CCW Pin = CLK
+//Rotary Encoder CW Pin = DT
+
 // Include Libraries
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -20,7 +26,9 @@
   int REcounter [RECount];
   int currentStateDT [RECount];
   String encdir [RECount];
+  double detentCirDist = 1.50; // Circum/nDetents (48mm/32) 
   float TempC [TSCount];
+  float RETravel[TSCount];
 
   //Setup oneWire instances to communicate w/ sensors & pass to Dallas Temperature
   #define ONE_WIRE_BUS_0 2
@@ -72,7 +80,8 @@ void setup() { // put your setup code here, to run once:
 }
   
 void loop() {  // put your main code here, to run repeatedly:
-
+    String dataStringCSV;
+    
     //update the temperature values every n loops
     if (tempIteration == 0){
     TS0.requestTemperatures();
@@ -103,23 +112,26 @@ void loop() {  // put your main code here, to run repeatedly:
       currentStateDT[i] = digitalRead(REDTPin[i]);
       if (digitalRead(REDTPin[i]) != currentStateCLK[i]){
         REcounter[i] --;
-        encdir[i] = "Contract";
+        encdir[i] = "C";
         }else{
         REcounter[i] ++;
-        encdir[i] = "Expand";
+        encdir[i] = "E";
         }
       }//end pin
+      
+      RETravel[i] = REcounter[i] * detentCirDist;// Calculate travel distance
+      
+      //Concat RE and TS values to CSV string
+      dataStringCSV.concat(RETravel[i]);
+      dataStringCSV.concat(',');
+      dataStringCSV.concat(TempC[i]);
+      if (i < RECount - 1){
+      dataStringCSV.concat(',');
+      }
+      previousStateCLK[i] = currentStateCLK[i];
     }//end pins
-  
+
   //Serial Write
-    for ( int i = 0; i < RECount; i++){
-    Serial.print(REcounter[i]);
-    Serial.print(",");
-    Serial.print(TempC[i]);
-    if (i < (RECount * 2)){
-    Serial.print(",");  
-    }
-    previousStateCLK[i] = currentStateCLK[i];
-    }
-   Serial.println();
+    Serial.println(dataStringCSV);
+    
 }//end loop
