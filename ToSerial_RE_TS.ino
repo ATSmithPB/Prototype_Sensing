@@ -15,7 +15,8 @@
   const int TSStartPin = 2;
 
   int tempIteration = 0;
-  int tempEvery = 10000;
+  long tempEvery = 9999; //read TS every n loops
+  int writeEvery = 100;//serial write every n loops
   int REIndex [RECount];
   int TSIndex [TSCount];
   int RECLKPin [RECount];
@@ -98,11 +99,7 @@ void loop() {  // put your main code here, to run repeatedly:
     TempC[4] = TS4.getTempCByIndex(0);
     TempC[5] = TS5.getTempCByIndex(0);
     }
-    tempIteration++;
     
-    if (tempIteration == tempEvery){
-    tempIteration = 0;
-    }
     
   //Read the current state of RE CLK pins
     for (int i = 0; i < RECount; i++){
@@ -118,20 +115,29 @@ void loop() {  // put your main code here, to run repeatedly:
         encdir[i] = "E";
         }
       }//end pin
-      
-      RETravel[i] = REcounter[i] * detentCirDist;// Calculate travel distance
-      
-      //Concat RE and TS values to CSV string
-      dataStringCSV.concat(RETravel[i]);
-      dataStringCSV.concat(',');
-      dataStringCSV.concat(TempC[i]);
-      if (i < RECount - 1){
-      dataStringCSV.concat(',');
-      }
+
+      if (tempIteration % writeEvery == 0){
+        RETravel[i] = REcounter[i] * detentCirDist;// Calculate travel distance
+        //Concat RE and TS values to CSV string
+        dataStringCSV.concat(RETravel[i]);
+        dataStringCSV.concat(',');
+        dataStringCSV.concat(TempC[i]);
+        if (i < RECount - 1){
+          dataStringCSV.concat(',');
+          }
+        }
       previousStateCLK[i] = currentStateCLK[i];
     }//end pins
-
+  
   //Serial Write
+    if (tempIteration % writeEvery == 0){
     Serial.println(dataStringCSV);
-    
+    }
+
+  //iterate and/or reset tempIteration
+    tempIteration++;
+    if (tempIteration == tempEvery){
+    tempIteration = 0;
+    }
+    delay(5);
 }//end loop
