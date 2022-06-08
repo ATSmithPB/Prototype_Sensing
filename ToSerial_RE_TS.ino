@@ -8,6 +8,8 @@
   const int DStartPin = 22;
   const int TSStartPin = 2;
 
+  int tempIteration = 0;
+  int tempEvery = 10000;
   int REIndex [RECount];
   int TSIndex [TSCount];
   int RECLKPin [RECount];
@@ -54,7 +56,7 @@ void setup() { // put your setup code here, to run once:
     }
   
   //Set-Up Serial Moniter
-    Serial.begin(19200);
+    Serial.begin(115200);
 
   //Set-Up Previous States
     for (int i = 0; i < RECount; i++){
@@ -69,17 +71,16 @@ void setup() { // put your setup code here, to run once:
     TS5.begin();
 }
   
-
 void loop() {  // put your main code here, to run repeatedly:
 
-  Serial.print("Requesting temperatures...");// Send the command to get temperatures
+    //update the temperature values every n loops
+    if (tempIteration == 0){
     TS0.requestTemperatures();
     TS1.requestTemperatures();
     TS2.requestTemperatures();
     TS3.requestTemperatures();
     TS4.requestTemperatures();
     TS5.requestTemperatures();
-  Serial.println("DONE");
     
     TempC[0] = TS0.getTempCByIndex(0);
     TempC[1] = TS1.getTempCByIndex(0);
@@ -87,8 +88,14 @@ void loop() {  // put your main code here, to run repeatedly:
     TempC[3] = TS3.getTempCByIndex(0);
     TempC[4] = TS4.getTempCByIndex(0);
     TempC[5] = TS5.getTempCByIndex(0);
-  
-  //Read the current state of CLK pins
+    }
+    tempIteration++;
+    
+    if (tempIteration == tempEvery){
+    tempIteration = 0;
+    }
+    
+  //Read the current state of RE CLK pins
     for (int i = 0; i < RECount; i++){
     currentStateCLK[i] = digitalRead(RECLKPin[i]);
 
@@ -97,27 +104,22 @@ void loop() {  // put your main code here, to run repeatedly:
       if (digitalRead(REDTPin[i]) != currentStateCLK[i]){
         REcounter[i] --;
         encdir[i] = "Contract";
-      }else{
+        }else{
         REcounter[i] ++;
         encdir[i] = "Expand";
-      }
-    }//end pin
+        }
+      }//end pin
     }//end pins
-  //Serial Read
+  
+  //Serial Write
     for ( int i = 0; i < RECount; i++){
-     //Operate
-    Serial.print("Cell ");
-    Serial.print(i);
-    Serial.print(" : ");
-    Serial.print(encdir[i]);
-    Serial.print(" -- ");
     Serial.print(REcounter[i]);
-    Serial.print(" -- ");
+    Serial.print(",");
     Serial.print(TempC[i]);
-    Serial.print("C");
-    Serial.print("      ");
-    
+    if (i < (RECount * 2)){
+    Serial.print(",");  
+    }
     previousStateCLK[i] = currentStateCLK[i];
     }
-   Serial.println("###");
+   Serial.println();
 }//end loop
