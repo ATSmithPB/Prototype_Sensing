@@ -9,6 +9,7 @@ import influxdb_client
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 
+sessionName = "Session 4"
 #Instantiate a new serial connection
 ser = serial.Serial('/dev/ttyACM0')
 ser.baudrate = 115200
@@ -22,22 +23,24 @@ ser.timeout = 1  #Specifies a read timeout in sec
 print("Serial Connection Made...")
 
 #Functions
-#Returns the last full line in a serial stream
+#Returns last full line of a serial stream as string, and removes tail "\n"
 def readLatestLine(s):
-    print("Reading Latest Line...")
-    s.flushInput()
-    latestLine = s.readline()
-    return latestLine
-
-loopDelay = 5 #seconds
+    while True:
+        s.flushInput()
+        latestLine = s.readline()
+        decodedLine = str(latestLine.decode("utf-8"))
+        if len(decodedLine) > 3:
+            if decodedLine[0] != "s" and decodedLine[len(decodedLine)-1] != "n" :
+                print("Invalid Line, trying again...")
+            else:
+                return decodedLine[1:len(decodedLine)-2] 
+        
+loopDelay = 20 #seconds
 #Main loop that uploads a serial data to InfluxDB every n seconds
 while True:
-    ser_bytes = readLatestLine(ser)
-    print("Decoding...")
-    decoded_bytes = str(ser_bytes[0:len(ser_bytes)-2].decode("utf-8"))
-    print(decoded_bytes)
-    serData = decoded_bytes.split(',')
-    
+    serStr = readLatestLine(ser)
+    print(serStr)
+    serData = serStr.split(',')
     #Initialize InfluxDB client
     token = "-V7PacrGpoiuPn0BUyThutSyoGOAAiwKEhP5YHBkNeR_ZawOzUuF2i-ywf-JopOUfZ_9rCLCJ_74mEP0xiIE4A=="
     org = "atsmitharc@gmail.com"
@@ -49,7 +52,7 @@ while True:
     write_api = client.write_api(write_options=SYNCHRONOUS)
        
     DBpoint = (
-    Point("Session 2")
+    Point(sessionName)
     .tag("Loc", "55,40,56,N,12,36,15,E")
     .field("A_00", float(serData[0]))
     .field("T_00", float(serData[1]))

@@ -81,7 +81,10 @@ void setup() { // put your setup code here, to run once:
 }
   
 void loop() {  // put your main code here, to run repeatedly:
-    String dataStringCSV;
+
+    //Output String. 
+    // "s" tells SerialMonitor.py that this is start of a new line ("\n" signals the end)
+    String dataStringCSV = "s";
     
     //update the temperature values every n loops
     if (tempIteration == 0){
